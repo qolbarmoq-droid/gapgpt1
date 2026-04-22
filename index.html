@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GapGPT - Ultimate AI Suite</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        #mainBody { transition: background-color 0.6s ease, color 0.4s ease; }
+        .ai-icon { background: linear-gradient(135deg, #10a37f, #059669); color: white !important; }
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-thumb { background: rgba(128,128,128,0.3); border-radius: 10px; }
+        
+        .glass-panel {
+            background: rgba(128, 128, 128, 0.08);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(128, 128, 128, 0.15);
+        }
+        
+        .active-bg {
+            position: absolute;
+            background: rgba(128, 128, 128, 0.2);
+            border: 1px solid rgba(128, 128, 128, 0.3);
+            border-radius: 99px;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 1;
+        }
+
+        .tab-btn { position: relative; z-index: 10; cursor: pointer; transition: 0.3s; }
+        .animate-msg { animation: fadeIn 0.4s ease forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* Mobil menyu animatsiyasi */
+        #sidebar { transition: transform 0.3s ease-in-out; }
+        
+        .typing-dots { display: flex; gap: 4px; padding: 4px 0; }
+        .dot { width: 6px; height: 6px; background: currentColor; border-radius: 50%; animation: blink 1.4s infinite both; }
+        .dot:nth-child(2) { animation-delay: 0.2s; }
+        .dot:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes blink { 0%, 80%, 100% { opacity: 0.3; } 40% { opacity: 1; } }
+    </style>
+</head>
+<body id="mainBody" class="flex h-screen bg-[#1a1a1a] text-white font-sans overflow-hidden">
+
+    <div id="loginModal" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 hidden">
+        <div class="bg-[#1c1c1c] border border-white/10 p-8 rounded-[32px] w-full max-w-md shadow-2xl mx-4">
+            <div class="text-center mb-8">
+                <div class="w-16 h-16 bg-blue-600 rounded-2xl mx-auto flex items-center justify-center mb-4 shadow-lg">
+                    <i class="fas fa-robot text-2xl text-white"></i>
+                </div>
+                <h2 class="text-2xl font-bold" data-key="loginTitle">GapGPT-ga xush kelibsiz</h2>
+                <p class="text-xs opacity-60 mt-2" data-key="loginSub">Davom etish uchun profilingizni yarating</p>
+            </div>
+            <div class="space-y-4">
+                <input type="text" id="regName" placeholder="Ismingiz" class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl outline-none focus:ring-2 ring-blue-500">
+                <input type="email" id="regEmail" placeholder="Email manzilingiz" class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl outline-none focus:ring-2 ring-blue-500">
+                <button onclick="handleAuth()" class="w-full bg-blue-600 hover:bg-blue-500 p-4 rounded-2xl font-bold transition-all transform active:scale-95 shadow-xl">
+                    <span data-key="loginBtn">Boshlash</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="sidebarOverlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 hidden md:hidden"></div>
+
+    <aside id="sidebar" class="fixed inset-y-0 left-0 z-50 w-72 h-full bg-[#1c1c1c] border-r border-white/10 p-4 transform -translate-x-full md:relative md:translate-x-0 flex flex-col">
+        <div class="flex items-center justify-between mb-6 md:hidden">
+            <span class="font-bold">Menyu</span>
+            <button onclick="toggleSidebar()" class="text-xl"><i class="fas fa-times"></i></button>
+        </div>
+
+        <button onclick="createNewChat(); toggleSidebar();" class="border border-white/10 rounded-2xl p-4 hover:bg-white/5 transition-all text-sm mb-6 flex items-center gap-3 w-full shadow-sm">
+            <i class="fas fa-plus text-blue-500"></i> <span data-key="newChat">Yangi chat</span>
+        </button>
+        
+        <div class="flex-grow overflow-y-auto px-1">
+            <p class="text-[10px] opacity-40 uppercase font-bold mb-4 tracking-widest px-2" data-key="history">Suhbatlar tarixi</p>
+            <div id="historyList" class="space-y-1"></div>
+        </div>
+
+        <div class="border-t border-white/10 pt-4 mt-4">
+            <div class="flex items-center gap-3 p-3 bg-white/5 rounded-2xl">
+                <div id="userAvatar" class="w-9 h-9 bg-gradient-to-tr from-blue-600 to-purple-600 rounded-xl flex items-center justify-center text-xs font-bold text-white shadow-inner">??</div>
+                <div class="truncate">
+                    <p id="userName" class="text-sm font-bold truncate">Mehmon</p>
+                    <p class="text-[10px] opacity-50">Premium User</p>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <div class="flex-grow flex flex-col relative w-full">
+        <header class="p-4 flex flex-col items-center gap-4 glass-panel z-30">
+            <div class="w-full flex justify-between items-center px-2">
+                <div class="flex items-center gap-3">
+                    <button onclick="toggleSidebar()" class="md:hidden text-xl p-2 bg-white/5 rounded-xl border border-white/10">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <div class="flex items-center gap-2">
+                        <span class="font-black text-2xl tracking-tighter text-blue-500">GapGPT</span>
+                        <span class="text-[9px] bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded-full font-bold">PRO</span>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-3">
+                    <div class="flex bg-black/40 rounded-full px-2 py-1 border border-white/10 text-[10px] font-bold">
+                        <button onclick="changeLanguage('uz')" id="lang-uz" class="px-2 hover:text-blue-400">UZ</button>
+                        <button onclick="changeLanguage('en')" id="lang-en" class="px-2 opacity-40 hover:text-blue-400">EN</button>
+                    </div>
+                    <input type="color" id="bgPicker" class="w-6 h-6 bg-transparent border-none cursor-pointer rounded-full overflow-hidden">
+                </div>
+            </div>
+
+            <div class="bg-black/20 rounded-full p-1 relative inline-flex border border-white/5 shadow-inner">
+                <div class="active-bg" id="activeBg"></div>
+                <button onclick="setMode('dict', this)" class="tab-btn active px-4 md:px-6 py-2 rounded-full text-[10px] md:text-xs font-bold flex items-center gap-2" id="btn-dict">
+                    <i class="fas fa-book"></i> <span data-key="dict">Lug'at</span>
+                </button>
+                <button onclick="setMode('gram', this)" class="tab-btn px-4 md:px-6 py-2 rounded-full text-[10px] md:text-xs font-bold flex items-center gap-2" id="btn-gram">
+                    <i class="fas fa-spell-check"></i> <span data-key="gram">Grammatika</span>
+                </button>
+                <button onclick="setMode('ai', this)" class="tab-btn px-4 md:px-6 py-2 rounded-full text-[10px] md:text-xs font-bold flex items-center gap-2" id="btn-ai">
+                    <i class="fas fa-robot"></i> <span data-key="ai">AI</span>
+                </button>
+            </div>
+        </header>
+
+        <main id="chatWindow" class="flex-grow overflow-y-auto p-4 md:p-8 space-y-6">
+            <div class="max-w-3xl mx-auto space-y-6" id="chatContainer"></div>
+        </main>
+
+        <footer class="p-4 md:p-6 bg-gradient-to-t from-[#1a1a1a] via-[#1a1a1a] to-transparent">
+            <div class="max-w-3xl mx-auto">
+                <div class="relative flex items-center bg-white/5 backdrop-blur-xl border border-white/10 p-1.5 rounded-[24px] focus-within:ring-2 ring-blue-500/40 transition-all shadow-2xl">
+                    <input type="text" id="userInput" class="bg-transparent w-full outline-none py-3 px-4 text-sm" placeholder="Xabar yozing...">
+                    <button id="sendBtn" class="bg-blue-600 text-white w-11 h-11 rounded-[18px] flex items-center justify-center hover:bg-blue-500 transition-all active:scale-90">
+                        <i class="fas fa-paper-plane text-sm"></i>
+                    </button>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        const translations = {
+            uz: { loginTitle: "Profil yaratish", loginSub: "Ma'lumotlaringizni kiriting", loginBtn: "Boshlash", newChat: "Yangi chat", history: "Suhbatlar tarixi", dict: "Lug'at", gram: "Grammatika", ai: "GapGPT", input: "Xabar yozing...", welcome: "Salom! Men GapGPT. Bugun nima haqida gaplashamiz?" },
+            en: { loginTitle: "Create Profile", loginSub: "Enter your details to start", loginBtn: "Get Started", newChat: "New Chat", history: "Recent Chats", dict: "Dictionary", gram: "Grammar", ai: "GapGPT", input: "Type a message...", welcome: "Hello! I am GapGPT. How can I help you today?" }
+        };
+
+        let currentLang = 'uz';
+        let currentMode = 'dict';
+        let chatHistory = JSON.parse(localStorage.getItem('gapgpt_pro_v3')) || [];
+        let currentChatId = null;
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            sidebar.classList.toggle('-translate-x-full');
+            overlay.classList.toggle('hidden');
+        }
+
+        function checkAuth() {
+            const user = JSON.parse(localStorage.getItem('gapgpt_user'));
+            if (!user) document.getElementById('loginModal').classList.remove('hidden');
+            else updateUserUI(user.name);
+        }
+
+        function handleAuth() {
+            const name = document.getElementById('regName').value.trim();
+            const email = document.getElementById('regEmail').value.trim();
+            if (name && email) {
+                localStorage.setItem('gapgpt_user', JSON.stringify({ name, email }));
+                document.getElementById('loginModal').classList.add('hidden');
+                updateUserUI(name);
+                addMessage(`Xush kelibsiz, ${name}!`, false);
+            }
+        }
+
+        function updateUserUI(name) {
+            document.getElementById('userName').innerText = name;
+            document.getElementById('userAvatar').innerText = name.substring(0, 2).toUpperCase();
+        }
+
+        function changeLanguage(lang) {
+            currentLang = lang;
+            document.querySelectorAll('[data-key]').forEach(el => el.innerText = translations[lang][el.getAttribute('data-key')]);
+            document.getElementById('userInput').placeholder = translations[lang].input;
+            document.getElementById('lang-uz').classList.toggle('opacity-40', lang !== 'uz');
+            document.getElementById('lang-en').classList.toggle('opacity-40', lang !== 'en');
+        }
+
+        function setMode(mode, el) {
+            currentMode = mode;
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            el.classList.add('active');
+            const activeBg = document.getElementById('activeBg');
+            activeBg.style.width = el.offsetWidth + 'px';
+            activeBg.style.left = el.offsetLeft + 'px';
+            activeBg.style.height = el.offsetHeight + 'px';
+        }
+
+        function createNewChat() {
+            currentChatId = Date.now();
+            const newChat = { id: currentChatId, title: translations[currentLang].newChat, messages: [] };
+            chatHistory.unshift(newChat);
+            saveData();
+            renderHistory();
+            document.getElementById('chatContainer').innerHTML = '';
+            addMessage(translations[currentLang].welcome, false);
+        }
+
+        function renderHistory() {
+            const historyList = document.getElementById('historyList');
+            historyList.innerHTML = chatHistory.slice(0, 10).map(chat => `
+                <div onclick="loadChat(${chat.id})" class="text-xs truncate cursor-pointer hover:bg-white/10 p-3 rounded-xl transition-all mb-1 flex items-center gap-3 ${chat.id === currentChatId ? 'bg-white/10 border border-white/10' : 'opacity-60'}">
+                    <i class="far fa-message text-[10px]"></i> ${chat.title}
+                </div>
+            `).join('');
+        }
+
+        function loadChat(id) {
+            currentChatId = id;
+            const chat = chatHistory.find(c => c.id === id);
+            document.getElementById('chatContainer').innerHTML = '';
+            chat.messages.forEach(m => renderMessageUI(m.text, m.isUser));
+            renderHistory();
+            if(window.innerWidth < 768) toggleSidebar();
+        }
+
+        function addMessage(text, isUser) {
+            if(!currentChatId) createNewChat();
+            renderMessageUI(text, isUser);
+            const chat = chatHistory.find(c => c.id === currentChatId);
+            chat.messages.push({ text, isUser });
+            if(isUser && chat.title === translations[currentLang].newChat) chat.title = text.substring(0, 20) + "...";
+            saveData();
+            renderHistory();
+
+            if(isUser) {
+                const loaderId = 'loader-' + Date.now();
+                showLoading(loaderId);
+                setTimeout(() => {
+                    document.getElementById(loaderId)?.remove();
+                    addMessage("Javob tayyorlanmoqda...", false);
+                }, 1500);
+            }
+        }
+
+        function showLoading(id) {
+            const html = `<div id="${id}" class="flex gap-4 items-start animate-msg"><div class="ai-icon w-9 h-9 rounded-xl flex-shrink-0 flex items-center justify-center text-[10px] font-bold">GPT</div><div class="bg-white/5 border border-white/10 p-4 rounded-[22px] rounded-tl-none"><div class="typing-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div></div>`;
+            document.getElementById('chatContainer').insertAdjacentHTML('beforeend', html);
+            scrollBottom();
+        }
+
+        function renderMessageUI(text, isUser) {
+            const html = isUser ? 
+                `<div class="flex justify-end animate-msg"><div class="bg-blue-600 text-white px-5 py-3 rounded-[22px] rounded-tr-none max-w-[85%] text-sm shadow-lg shadow-blue-500/10">${text}</div></div>` :
+                `<div class="flex gap-4 items-start animate-msg"><div class="ai-icon w-9 h-9 rounded-xl flex-shrink-0 flex items-center justify-center text-[10px] font-bold">GPT</div><div class="space-y-1"><p class="text-[9px] opacity-40 font-bold uppercase ml-1">${currentMode}</p><div class="bg-white/5 border border-white/10 p-4 rounded-[22px] rounded-tl-none text-sm leading-relaxed">${text}</div></div></div>`;
+            document.getElementById('chatContainer').insertAdjacentHTML('beforeend', html);
+            scrollBottom();
+        }
+
+        function scrollBottom() {
+            const win = document.getElementById('chatWindow');
+            win.scrollTo({top: win.scrollHeight, behavior: 'smooth'});
+        }
+
+        function saveData() { localStorage.setItem('gapgpt_pro_v3', JSON.stringify(chatHistory)); }
+
+        document.getElementById('sendBtn').onclick = () => {
+            const input = document.getElementById('userInput');
+            if(input.value.trim()) { addMessage(input.value, true); input.value = ''; }
+        };
+
+        document.getElementById('userInput').onkeypress = (e) => { if(e.key === 'Enter') document.getElementById('sendBtn').click(); };
+
+        document.getElementById('bgPicker').oninput = (e) => {
+            document.getElementById('mainBody').style.backgroundColor = e.target.value;
+        };
+
+        window.onload = () => {
+            checkAuth();
+            setMode('dict', document.getElementById('btn-dict'));
+            if(chatHistory.length > 0) loadChat(chatHistory[0].id);
+            else createNewChat();
+        };
+    </script>
+</body>
+</html>
